@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+# Ask the user to enter an account name
+account_name = input("Enter account name: ")
+
+# A flag variable to track if the account was found
+found = False
+
+# Loop through each account name stored in the 'passwords' dictionary
+for acc in passwords:
+    # Check if the current account matches the user input
+    if acc == account_name:
+        # If matched, print the stored password
+        print("Password:", passwords[acc])
+        # Mark that the account was found
+        found = True
+        # Stop the loop because we already found the account
+        break
+
+# If the loop finishes and no matching account was found
+if not found:
+    print("Account not found")
