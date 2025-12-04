@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+
+# Example password storage dictionary
+passwords = {
+    "email": "myEmailPassword123",
+    "github": "GHpass!2024",
+    "instagram": "insta12345!"
+}
+
 # Ask the user to enter an account name
 account_name = input("Enter account name: ")
 
