@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+# Import necessary modules
+# random: for making random selections
+# string: for sets of letters, digits, and symbols
+import random
+import string
+
+# PasswordManager class: manages all passwords for different accounts
+class PasswordManager:
+    def __init__(self):
+        # Dictionary to store passwords in the form: {account_name: password}
+        # Each account name will be a key, and the corresponding password its value
+        self.passwords = {}
+
+    # Method to generate a random password
+    def generate_password(self, length=12):
+        # Define possible characters: uppercase, lowercase letters, digits, and symbols
+        chars = string.ascii_letters + string.digits + string.punctuation
+        # Create a random password by picking characters randomly from chars
+        password = ''.join(random.choice(chars) for _ in range(length))
+        return password
+
+    # Method to add a new account
+    def add_account(self, account_name):
+        # Generate a random password for the account
+        password = self.generate_password()
+        # Store the account and password in the dictionary
+        self.passwords[account_name] = password
+        # Print confirmation for the user
+        print(f"Account '{account_name}' added with password: {password}")
+
+    # Method to retrieve the password for a given account
+    def get_password(self, account_name):
+        # Return the password if it exists; otherwise return a message
+        return self.passwords.get(account_name, "No such account")
+
+
+# Example of how to use PasswordManager
+pm = PasswordManager()  # Create a PasswordManager object
+
+# Add a new account called "email" and automatically generate a password
+pm.add_account("email")
+
+# Retrieve and print the password for the "email" account
+print(pm.get_password("email"))
+
