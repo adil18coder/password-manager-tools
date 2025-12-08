@@ -1,0 +1,55 @@
+"""
+Short Medium-Level Password Manager Tools
+Includes:
+- password generator
+- strength checker
+- SHA-256 hasher
+- simple storage
+"""
+
+import secrets
+import string
+import hashlib
+
+
+def generate_password(length=10):
+    """Generate a random password with letters, digits, symbols."""
+    pool = string.ascii_letters + string.digits + string.punctuation
+    pwd = ""
+    for _ in range(length):      # for loop
+        pwd += secrets.choice(pool)
+    return pwd
+
+def strength(pwd):
+    """Return weak / medium / strong."""
+    has_digit = any(c.isdigit() for c in pwd)
+    has_symbol = any(not c.isalnum() for c in pwd)
+    if len(pwd) >= 12 and has_digit and has_symbol:
+        return "strong"
+    if len(pwd) >= 8 and has_digit:
+        return "medium"
+    return "weak"
+
+
+def hash_pwd(pwd):
+    """Return salted SHA-256 hash."""
+    salt = secrets.token_hex(4)
+    h = hashlib.sha256((salt + pwd).encode()).hexdigest()
+    return salt, h
+
+storage = {}
+
+def add_entry(name, pwd):
+    """Store password with salt, hash, strength."""
+    s, h = hash_pwd(pwd)
+    storage[name] = {"salt": s, "hash": h, "strength": strength(pwd)}
+
+if __name__ == "__main__":
+    # create 3 sample entries using for-loop
+    for i in range(3):
+        p = generate_password(8 + i)
+        add_entry(f"entry{i+1}", p)
+
+    # print results
+    for name, info in storage.items():
+        print(name, "->", info)
