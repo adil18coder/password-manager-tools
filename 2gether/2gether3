@@ -1,0 +1,56 @@
+"""
+Password Manager Tools - Exception Handling Example
+Handles:
+- invalid length input
+- empty password
+- hashing errors
+"""
+
+import secrets
+import string
+import hashlib
+
+
+def generate_password(length):
+    """Generate a random password. Uses exception handling for invalid input."""
+    try:
+        length = int(length)      # may raise ValueError
+        if length <= 0:
+            raise ValueError("Length must be positive.")
+    except ValueError:
+        return "Error: invalid password length."
+
+    pool = string.ascii_letters + string.digits + string.punctuation
+    pwd = ""
+    for _ in range(length):
+        pwd += secrets.choice(pool)
+    return pwd
+
+
+def hash_password(pwd):
+    """Hash password with SHA-256. Handles empty input."""
+    try:
+        if not pwd:
+            raise ValueError("Password cannot be empty.")
+        salt = secrets.token_hex(4)
+        h = hashlib.sha256((salt + pwd).encode()).hexdigest()
+        return salt, h
+    except Exception as e:
+        return f"Error hashing password: {e}"
+
+
+if __name__ == "__main__":
+    user_lengths = ["10", "-5", "abc"]   # some valid + invalid inputs
+
+    for ln in user_lengths:
+        print("\nTrying length:", ln)
+        pwd = generate_password(ln)
+
+        if "Error" in pwd:
+            print(pwd)
+            continue   # skip hashing
+
+        print("Generated:", pwd)
+
+        result = hash_password(pwd)
+        print("Hash result:", result)
