@@ -1,0 +1,22 @@
+import os
+
+def save_passwords(file_name, data, master_password):
+    from encrypt_module import encrypt_data  # yuxarıdakı AES funksiyasını idxal et
+    enc = encrypt_data(json.dumps(data), master_password)
+    with open(file_name, 'w') as f:
+        f.write(enc)
+
+def load_passwords(file_name, master_password):
+    from encrypt_module import decrypt_data
+    if not os.path.exists(file_name):
+        return {}
+    with open(file_name, 'r') as f:
+        enc = f.read()
+    dec = decrypt_data(enc, master_password)
+    return json.loads(dec)
+
+# Example usage
+passwords = {"example.com": "MySecret123!"}
+save_passwords("passwords.json", passwords, "MasterPassword")
+loaded = load_passwords("passwords.json", "MasterPassword")
+print(loaded)
