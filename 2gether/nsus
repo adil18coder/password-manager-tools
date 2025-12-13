@@ -1,14 +1,28 @@
+# server.py
 import socket
 
-def send_passwords_to_server(host, port, data):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        s.sendall(data.encode())
-        response = s.recv(1024)
-    return response.decode()
+host = "127.0.0.1"  # Localhost
+port = 5000         # Must match the port in your client
 
-# Example usage
-host = "127.0.0.1"
-port = 5000
-response = send_passwords_to_server(host, port, "Hello server!")
-print("Server response:", response)
+# Create TCP socket
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind((host, port))
+server_socket.listen(1)  # Allow 1 connection at a time
+
+print(f"Server started and listening on {host}:{port}...")
+
+while True:
+    # Wait for a client to connect
+    client_socket, client_address = server_socket.accept()
+    print(f"Client connected from: {client_address}")
+
+    # Receive data from client
+    data = client_socket.recv(1024).decode()
+    print(f"Received: {data}")
+
+    # Send a response back
+    response = "Hello client! I got your message."
+    client_socket.sendall(response.encode())
+
+    # Close connection with this client
+    client_socket.close()
