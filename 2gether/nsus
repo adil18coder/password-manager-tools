@@ -1,0 +1,14 @@
+import socket
+
+def send_passwords_to_server(host, port, data):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((host, port))
+        s.sendall(data.encode())
+        response = s.recv(1024)
+    return response.decode()
+
+# Example usage
+host = "127.0.0.1"
+port = 5000
+response = send_passwords_to_server(host, port, "Hello server!")
+print("Server response:", response)
