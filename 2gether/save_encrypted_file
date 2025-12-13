@@ -1,0 +1,36 @@
+import json
+import base64
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+import hashlib
+
+def pad(data):
+    return data + (AES.block_size - len(data) % AES.block_size) * chr(AES.block_size - len(data) % AES.block_size)
+
+def unpad(data):
+    return data[:-ord(data[-1])]
+
+def encrypt_data(data, key):
+    key_bytes = hashlib.sha256(key.encode()).digest()
+    cipher = AES.new(key_bytes, AES.MODE_CBC)
+    ct_bytes = cipher.encrypt(pad(data).encode())
+    iv = base64.b64encode(cipher.iv).decode('utf-8')
+    ct = base64.b64encode(ct_bytes).decode('utf-8')
+    return json.dumps({'iv': iv, 'ciphertext': ct})
+
+def decrypt_data(enc_data, key):
+    key_bytes = hashlib.sha256(key.encode()).digest()
+    b64 = json.loads(enc_data)
+    iv = base64.b64decode(b64['iv'])
+    ct = base64.b64decode(b64['ciphertext'])
+    cipher = AES.new(key_bytes, AES.MODE_CBC, iv)
+    pt = unpad(cipher.decrypt(ct).decode('utf-8'))
+    return pt
+
+# Example usage
+passwords = {"example.com": "MySecret123!"}
+master_key = "MasterPassword"
+enc = encrypt_data(json.dumps(passwords), master_key)
+print("Encrypted:", enc)
+dec = decrypt_data(enc, master_key)
+print("Decrypted:", dec)
