@@ -1,22 +1,54 @@
 import os
+import json
+from getpass import getpass
+from cryptography.fernet import Fernet
 
-def save_passwords(file_name, data, master_password):
-    from encrypt_module import encrypt_data 
-    enc = encrypt_data(json.dumps(data), master_password)
-    with open(file_name, 'w') as f:
-        f.write(enc)
+# File names for storing the encryption key and encrypted passwords
+KEY_FILE = "secret.key"
+PASSWORD_FILE = "passwords.json"
 
-def load_passwords(file_name, master_password):
-    from encrypt_module import decrypt_data
-    if not os.path.exists(file_name):
+def generate_key():
+    # Generate a new Fernet encryption key
+    key = Fernet.generate_key()
+    # Save the key to a file (keep this file secure!)
+    with open(KEY_FILE, "wb") as key_file:
+        key_file.write(key)
+
+def load_key():
+    # Load the encryption key; generate a new one if it doesn't exist
+    if not os.path.exists(KEY_FILE):
+        generate_key()
+    return open(KEY_FILE, "rb").read()
+
+def encrypt_data(data, key):
+    # Encrypt the given data (dictionary) using the provided key
+    f = Fernet(key)
+    encrypted = f.encrypt(json.dumps(data).encode())
+    return encrypted
+
+def decrypt_data(encrypted, key):
+    # Decrypt the encrypted data using the provided key
+    f = Fernet(key)
+    decrypted = f.decrypt(encrypted).decode()
+    return json.loads(decrypted)
+
+def save_passwords(passwords, key):
+    # Encrypt and save the passwords dictionary to the file
+    encrypted = encrypt_data(passwords, key)
+    with open(PASSWORD_FILE, "wb") as f:
+        f.write(encrypted)
+
+def load_passwords(key):
+    # Load and decrypt passwords from the file; return empty dict if file doesn't exist
+    if not os.path.exists(PASSWORD_FILE):
         return {}
-    with open(file_name, 'r') as f:
-        enc = f.read()
-    dec = decrypt_data(enc, master_password)
-    return json.loads(dec)
+    with open(PASSWORD_FILE, "rb") as f:
+        encrypted = f.read()
+    return decrypt_data(encrypted, key)
 
-# Example usage
-passwords = {"example.com": "MySecret123!"}
-save_passwords("passwords.json", passwords, "MasterPassword")
-loaded = load_passwords("passwords.json", "MasterPassword")
-print(loaded)
+# Usage example / Main program
+key = load_key()                    # Load or generate the encryption key
+passwords = load_passwords(key)     # Load existing passwords (decrypted)
+
+# Simple master password prompt (for testing only - in real apps, hash and verify it properly)
+master_pwd = getpass("Enter
