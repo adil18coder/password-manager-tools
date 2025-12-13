@@ -51,4 +51,4 @@ key = load_key()                    # Load or generate the encryption key
 passwords = load_passwords(key)     # Load existing passwords (decrypted)
 
 # Simple master password prompt (for testing only - in real apps, hash and verify it properly)
-master_pwd = getpass("Enter
+master_pwd = getpass("Enter")
