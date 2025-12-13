@@ -1,7 +1,7 @@
 import os
 
 def save_passwords(file_name, data, master_password):
-    from encrypt_module import encrypt_data  # yuxarıdakı AES funksiyasını idxal et
+    from encrypt_module import encrypt_data 
     enc = encrypt_data(json.dumps(data), master_password)
     with open(file_name, 'w') as f:
         f.write(enc)
