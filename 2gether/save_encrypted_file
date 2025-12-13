@@ -3,52 +3,132 @@ import json
 from getpass import getpass
 from cryptography.fernet import Fernet
 
-# File names for storing the encryption key and encrypted passwords
+# File names
 KEY_FILE = "secret.key"
 PASSWORD_FILE = "passwords.json"
 
 def generate_key():
-    # Generate a new Fernet encryption key
+    """Generate a new Fernet encryption key and save it to file"""
     key = Fernet.generate_key()
-    # Save the key to a file (keep this file secure!)
     with open(KEY_FILE, "wb") as key_file:
         key_file.write(key)
+    return key
 
 def load_key():
-    # Load the encryption key; generate a new one if it doesn't exist
+    """Load the encryption key; generate a new one if it doesn't exist"""
     if not os.path.exists(KEY_FILE):
-        generate_key()
-    return open(KEY_FILE, "rb").read()
+        print("Generating new encryption key...")
+        return generate_key()
+    with open(KEY_FILE, "rb") as key_file:
+        return key_file.read()
 
-def encrypt_data(data, key):
-    # Encrypt the given data (dictionary) using the provided key
+def encrypt_data(data: dict, key: bytes) -> bytes:
+    """Convert the data (dict) to JSON, encrypt it, and return bytes"""
     f = Fernet(key)
-    encrypted = f.encrypt(json.dumps(data).encode())
-    return encrypted
+    json_data = json.dumps(data).encode('utf-8')
+    return f.encrypt(json_data)
 
-def decrypt_data(encrypted, key):
-    # Decrypt the encrypted data using the provided key
+def decrypt_data(encrypted: bytes, key: bytes) -> dict:
+    """Decrypt the encrypted bytes and return the original dict"""
     f = Fernet(key)
-    decrypted = f.decrypt(encrypted).decode()
-    return json.loads(decrypted)
+    decrypted_bytes = f.decrypt(encrypted)
+    return json.loads(decrypted_bytes.decode('utf-8'))
 
-def save_passwords(passwords, key):
-    # Encrypt and save the passwords dictionary to the file
+def save_passwords(passwords: dict, key: bytes):
+    """Encrypt the passwords and save them to file"""
     encrypted = encrypt_data(passwords, key)
     with open(PASSWORD_FILE, "wb") as f:
         f.write(encrypted)
 
-def load_passwords(key):
-    # Load and decrypt passwords from the file; return empty dict if file doesn't exist
+def load_passwords(key: bytes) -> dict:
+    """Load and decrypt the password file; return empty dict if file doesn't exist"""
     if not os.path.exists(PASSWORD_FILE):
         return {}
-    with open(PASSWORD_FILE, "rb") as f:
-        encrypted = f.read()
-    return decrypt_data(encrypted, key)
+    try:
+        with open(PASSWORD_FILE, "rb") as f:
+            encrypted = f.read()
+        return decrypt_data(encrypted, key)
+    except Exception as e:
+        print(f"Error reading password file: {e}")
+        print("The file may be corrupted. Starting fresh.")
+        return {}
 
-# Usage example / Main program
-key = load_key()                    # Load or generate the encryption key
-passwords = load_passwords(key)     # Load existing passwords (decrypted)
+def add_password(passwords: dict):
+    """Add a new password entry"""
+    site = input("Enter site/name (e.g., gmail.com): ").strip()
+    username = input("Enter username/email: ").strip()
+    password = getpass("Enter password: ")
+    
+    passwords[site] = {
+        "username": username,
+        "password": password
+    }
+    print(f"Password for '{site}' successfully added.\n")
 
-# Simple master password prompt (for testing only - in real apps, hash and verify it properly)
-master_pwd = getpass("Enter")
+def view_passwords(passwords: dict):
+    """List all saved passwords"""
+    if not passwords:
+        print("No passwords saved yet.\n")
+        return
+    
+    print("\nSaved Passwords:")
+    print("-" * 50)
+    for site, info in passwords.items():
+        print(f"Site: {site}")
+        print(f"  Username: {info['username']}")
+        print(f"  Password: {info['password']}")
+        print("-" * 50)
+    print()
+
+def delete_password(passwords: dict):
+    """Delete a password entry"""
+    site = input("Enter the site name to delete: ").strip()
+    if site in passwords:
+        del passwords[site]
+        print(f"Password for '{site}' deleted.\n")
+    else:
+        print("No such site found.\n")
+
+def main():
+    # Load the encryption key
+    key = load_key()
+    
+    # Load existing passwords
+    passwords = load_passwords(key)
+    
+    # Simple master password check (in real apps, use proper hashing)
+    master_input = getpass("Enter master password (must be the same every time): ")
+    if master_input != "12345":  # Change this or remove for testing
+        print("Incorrect master password!")
+        return
+    
+    print("Welcome to the Password Manager!\n")
+    
+    while True:
+        print("1. Add Password")
+        print("2. View Passwords")
+        print("3. Delete Password")
+        print("4. Exit")
+        
+        choice = input("\nYour choice (1-4): ").strip()
+        
+        if choice == "1":
+            add_password(passwords)
+            save_passwords(passwords, key)
+        
+        elif choice == "2":
+            view_passwords(passwords)
+        
+        elif choice == "3":
+            delete_password(passwords)
+            save_passwords(passwords, key)
+        
+        elif choice == "4":
+            print("Exiting... Passwords saved securely.")
+            break
+        
+        else:
+            print("Invalid choice, please enter a number between 1-4.\n")
+
+if __name__ == "__main__":
+    main()
