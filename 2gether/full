@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+import json # json files
+import os # file check
+import hashlib # hashing
+import random # random
+import string # characters
+from cryptography.fernet import Fernet # encryption
+
+#2gether/password manager tools
+# Strong password generator
+
+def generate_password(length=12): # password length
+    c=string.ascii_letters # letters
+    c=c+string.digits # numbers
+    c=c+string.punctuation # symbols
+    password = "" # empty string
+
+    for i in range(length): # loop
+        password += random.choice(c) # add c
+    return password # return password
+
+def generate_custom_password():# custom generator
+    try:
+        l=int(input("Password length: ")) # user length
+        if l < 6: # simple validation
+            print("Too short, using default")
+            l=12
+        return generate_password(l)
+    except:
+        return generate_password() # fallback
+
+#2gether/password manager tools
+# Master password hashing
+
+def hash_password(password): # hash function
+    encoded=password.encode() # encode
+    hashed=hashlib.sha256(encoded).hexdigest() # sha256
+    return hashed
+
+#2gether/password manager tools
+# Encrypted file save
+
+DATA_FILE="passwords.json" # data file
+MASTER_FILE="master.hash" # master hash
+KEY_FILE="key.key" # key file
+
+def save_data(filename, data): # save json
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4) # pretty json
+
+def load_data(filename): # load json
+    if not os.path.exists(filename): # file check
+        return {}
+    with open(filename, "r") as f:
+        return json.load(f)
+
+#2gether/password manager tools
+# Encryption / decryption
+
+def create_key(): # create key
+    key=Fernet.generate_key() # generate
+    with open(KEY_FILE, "wb") as f:
+        f.write(key) # save key
+    return key
+
+def load_key(): # load key
+    if not os.path.exists(KEY_FILE): # no key
+        return create_key() # create
+    with open(KEY_FILE, "rb") as f:
+        return f.read() # read key
+
+def encrypt_text(key, text): # encrypt
+    f=Fernet(key)
+    encrypted=f.encrypt(text.encode())
+    return encrypted.decode() # return string
+
+def decrypt_text(key, text): # decrypt
+    f = Fernet(key)
+    decrypted = f.decrypt(text.encode())
+    return decrypted.decode() # return string
+
+#2gether/password manager tools
+# OOP design
+
+class PasswordManager:
+    def __init__(self, key): # constructor
+        self.key = key # save key
+        self.data = load_data(DATA_FILE)# load data
+
+    def site_exists(self, site): # check site
+        return site in self.data
+
+    def add_password(self, site, username, password):
+        encrypted = encrypt_text(self.key, password)  # encrypt
+        self.data[site] = { # save dict
+            "username": username,
+            "password": encrypted
+        }
+        save_data(DATA_FILE, self.data) # save file
+        print("Password added")
+
+    def view_password(self, site):
+        if not self.site_exists(site):  # check
+            print("Site not found")
+            return
+        info = self.data[site]
+        decrypted = decrypt_text(self.key, info["password"])
+        print("Site:", site)
+        print("Username:", info["username"])
+        print("Password:", decrypted)
+    def list_sites(self): # list sites
+        if not self.data:
+            print("No saved sites")
+            return
+        print("Saved sites:")
+        for site in self.data:
+            print("-", site)
+    def delete_site(self, site): # delete
+        if site in self.data:
+            del self.data[site]
+            save_data(DATA_FILE, self.data)
+            print("Deleted")
+        else:
+            print("Site not found")
+
+#2gether/password manager tools
+# Validation
+
+
+def setup_master_password(): # first setup
+    pwd = input("Create master password: ")
+    confirm = input("Confirm master password: ")
+    if pwd != confirm: # check match
+        print("Passwords do not match")
+        return setup_master_password()
+    with open(MASTER_FILE, "w") as f:
+        f.write(hash_password(pwd)) # save hash
+    print("Master password saved")
+
+
+def check_master_password(): # login
+    if not os.path.exists(MASTER_FILE): # first run
+        setup_master_password()
+    saved_hash = open(MASTER_FILE).read() # read hash
+    for attempt in range(3): # 3 tries
+        pwd = input("Enter master password: ")
+        if hash_password(pwd) == saved_hash:
+            return True
+        print("Wrong password")
+
+    return False
+
+#2gether/password manager tools
+# Functions, loops, Exception handling
+
+def menu(): # menu text
+    print("""
+1 - Add password
+2 - View password
+3 - List sites
+4 - Delete site
+5 - Generate random password
+6 - Exit
+""")
+
+def main():
+    if not check_master_password(): # validation
+        print("Access denied")
+        return
+    key = load_key() # load key
+    manager = PasswordManager(key) # object
+
+    while True: # main loop
+        try:
+            menu()
+            choice = input("Choose option: ")
+            if choice == "1":
+                site = input("Site name: ")
+                username = input("Username: ")
+                password = input("Password (empty for random): ")
+                if password == "":
+                    password = generate_custom_password()
+                    print("Generated password:", password)
+                manager.add_password(site, username, password)
+            elif choice == "2":
+                site = input("Site name: ")
+                manager.view_password(site)
+            elif choice == "3":
+                manager.list_sites()
+            elif choice == "4":
+                site = input("Site name: ")
+                manager.delete_site(site)
+            elif choice == "5":
+                print("Random password:", generate_custom_password())
+            elif choice == "6":
+                print("Goodbye")
+                break
+            else:
+                print("Invalid option")
+        except Exception:
+            print("Something went wrong")
+
+#2gether/password manager tools
+# Program start
+
+if __name__ == "__main__":
+    main()
